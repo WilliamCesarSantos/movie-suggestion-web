@@ -51,6 +51,9 @@ description: "Task list template for feature implementation"
 - [ ] T001 Create project structure per implementation plan
 - [ ] T002 Initialize [language] project with [framework] dependencies
 - [ ] T003 [P] Configure linting and formatting tools
+- [ ] T004 Establish modular folders: src/components, src/services, src/hooks
+- [ ] T005 Confirm native hooks plan for state (`useState`, `useEffect`)
+- [ ] T006 Confirm API service layer uses native fetch with OpenAPI-based typings
 
 ---
 
@@ -156,6 +159,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
+- [ ] TXXX Constitution compliance review (stack, folder pattern, hooks-only state, API isolation)
 
 ---
 

@@ -89,6 +89,11 @@
 - **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
 - **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
 - **FR-005**: System MUST [behavior, e.g., "log all security events"]
+- **FR-006**: Frontend implementation MUST use React (Vite), TypeScript, and Tailwind CSS
+- **FR-007**: Folder structure MUST prioritize `src/components`, `src/services`, and `src/hooks`
+- **FR-008**: State management MUST use native React hooks (`useState`, `useEffect`)
+- **FR-009**: HTTP calls MUST be isolated in services and use native `fetch`
+- **FR-010**: API typing MUST be strict and derived from provided OpenAPI contracts
 
 *Example of marking unclear requirements:*
 
@@ -99,6 +104,13 @@
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]
 - **[Entity 2]**: [What it represents, relationships to other entities]
+
+## Technical Constraints *(mandatory)*
+
+- Do not introduce Redux or complex state managers without explicit approval.
+- Keep architecture simple and modular with minimal folder expansion.
+- Keep API logic out of UI components.
+- Keep implementation readable for backend senior developers learning frontend.
 
 ## Success Criteria *(mandatory)*
 

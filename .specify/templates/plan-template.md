@@ -31,7 +31,13 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] Stack oficial preservada: React (Vite), TypeScript e Tailwind CSS
+- [ ] Estrutura modular simples prevista: src/components, src/services, src/hooks
+- [ ] Gestao de estado definida com hooks nativos (`useState`, `useEffect`)
+- [ ] Nenhum uso de Redux ou ferramenta complexa sem aprovacao explicita
+- [ ] Integracao HTTP isolada em servicos usando `fetch` nativo
+- [ ] Tipagem de API alinhada ao OpenAPI fornecido
+- [ ] Plano legivel para backend senior em aprendizado de frontend
 
 ## Project Structure
 

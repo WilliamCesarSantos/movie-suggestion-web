@@ -1,50 +1,85 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Version change: N/A (template) -> 1.0.0
+- Modified principles:
+	- Template Principle 1 -> I. Stack Tecnologica Oficial
+	- Template Principle 2 -> II. Estrutura Modular Simples
+	- Template Principle 3 -> III. Gestao de Estado com Hooks Nativos
+	- Template Principle 4 -> IV. Integracao de API Tipada e Isolada
+	- Template Principle 5 -> V. Curva de Aprendizado Frontend Assistida
+- Added sections:
+	- Padroes Tecnicos
+	- Fluxo de Trabalho e Revisao
+- Removed sections:
+	- Nenhuma
+- Templates requiring updates:
+	- .specify/templates/plan-template.md: ✅ updated
+	- .specify/templates/spec-template.md: ✅ updated
+	- .specify/templates/tasks-template.md: ✅ updated
+	- .specify/templates/commands/*.md: ⚠ pending (directory not found)
+- Follow-up TODOs:
+	- Nenhum
+-->
+
+# Front-End Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Stack Tecnologica Oficial
+Todo desenvolvimento frontend MUST usar React com Vite, TypeScript e Tailwind CSS.
+Mudancas de stack, substituicao de framework ou adicao de camada concorrente MUST
+ser aprovadas antes da implementacao. Rationale: manter consistencia de entrega,
+evitar fragmentacao e reduzir custo de manutencao.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Estrutura Modular Simples
+A arquitetura de pastas MUST seguir padrao modular simples com foco em:
+`src/components`, `src/services` e `src/hooks`.
+Novos diretorios so podem ser criados com justificativa clara no artefato da feature.
+Rationale: manter navegacao previsivel e reduzir complexidade acidental.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Gestao de Estado com Hooks Nativos
+A gestao de estado MUST priorizar hooks nativos do React, especialmente `useState`
+e `useEffect`. Ferramentas complexas de estado global, incluindo Redux, MUST NOT ser
+adotadas sem aprovacao explicita. Rationale: evitar sobreengenharia e consolidar
+fundamentos de React.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Integracao de API Tipada e Isolada
+Chamadas HTTP MUST ficar isoladas em `src/services` usando `fetch` nativo.
+Contratos de request/response MUST usar tipagem estrita em TypeScript baseada no
+OpenAPI fornecido. Rationale: diminuir acoplamento na UI e aumentar seguranca de
+tipos na integracao backend/frontend.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Curva de Aprendizado Frontend Assistida
+Como o perfil principal e backend senior aprendendo frontend, toda entrega MUST ser
+legivel, direta e acompanhada de explicacao breve sobre decisoes de estrutura,
+componentes e servicos. Rationale: acelerar dominio pratico de frontend sem elevar
+complexidade desnecessaria.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Padroes Tecnicos
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- UI e composicao de componentes em React + TypeScript.
+- Estilizacao via Tailwind CSS com classes utilitarias claras e previsiveis.
+- Regras de negocio fora de componentes visuais sempre que aplicavel.
+- Integracoes externas concentradas em servicos e nunca misturadas no JSX.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Fluxo de Trabalho e Revisao
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Antes da implementacao, a feature MUST declarar impacto em componentes, hooks e
+	servicos.
+- Toda PR MUST confirmar que a estrutura modular simples foi mantida.
+- Toda PR MUST confirmar ausencia de Redux ou alternativa complexa sem aprovacao.
+- Toda PR MUST confirmar que chamadas API usam `fetch` nativo e tipagem baseada em
+	OpenAPI.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+Esta constituicao prevalece sobre convencoes locais conflitantes.
+Qualquer excecao MUST ser registrada na especificacao/plano e aprovada.
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+Politica de versao da constituicao:
+- MAJOR: mudancas incompativeis de principio ou remocao de regra obrigatoria.
+- MINOR: adicao de novo principio ou secao normativa.
+- PATCH: esclarecimentos sem mudanca normativa.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Revisoes de conformidade MUST ocorrer em toda PR antes de merge.
+
+**Version**: 1.0.0 | **Ratified**: 2026-06-13 | **Last Amended**: 2026-06-13
