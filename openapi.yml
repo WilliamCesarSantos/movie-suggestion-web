@@ -1,0 +1,975 @@
+openapi: 3.0.3
+info:
+  title: Movie Suggestion API
+  description: >
+    Personalized movie recommendation API built in Go using clean architecture.
+    Integrates with OMDB for movie data, Neo4j for graph-based recommendations,
+    PostgreSQL for authentication, and AWS SQS for async movie imports.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Health
+    description: Service health check
+  - name: Auth
+    description: Authentication
+  - name: Users
+    description: User management
+  - name: Movies
+    description: Movie catalog
+  - name: Recommendations
+    description: Personalized movie recommendations
+  - name: Import
+    description: Async movie import via OMDB
+
+security: []
+
+paths:
+  /api/v1/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns the health status of the API and its dependencies.
+      operationId: healthCheck
+      parameters:
+        - $ref: "#/components/parameters/CorrelationIdHeader"
+      responses:
+        "200":
+          description: Service is healthy or degraded
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: Service is degraded
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/v1/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      description: Authenticates a user and returns a signed JWT token.
+      operationId: login
+      parameters:
+        - $ref: "#/components/parameters/CorrelationIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/users:
+    post:
+      tags: [Users]
+      summary: Create user
+      description: Creates a new user. Requires `users:write` role.
+      operationId: createUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUserResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Email already exists
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: email already exists
+        "500":
+          $ref: "#/components/responses/InternalError"
+    get:
+      tags: [Users]
+      summary: List users
+      description: >
+        Returns a paginated list of users. Requires `users:read` role.
+
+        **Visibility rule:**
+        - Users with only `users:read` (without `users:write` or `*`) see only their own record.
+          The `email` filter is automatically forced to the caller's email.
+        - Users with `users:write` or `*` can list and filter all users.
+      operationId: listUsers
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationIdHeader"
+        - name: email
+          in: query
+          description: Filter by exact email address.
+          schema:
+            type: string
+            format: email
+            example: alice@example.com
+        - name: name
+          in: query
+          description: Filter by name (case-insensitive partial match).
+          schema:
+            type: string
+            example: Alice
+        - name: page
+          in: query
+          description: Page number (1-based, default 1).
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          description: Items per page (1–100, default 20).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Paginated list of users
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListUsersResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user
+      description: Returns the details of a user. Requires `users:read` role and ownership or wildcard (`*`).
+      operationId: getUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationIdHeader"
+        - $ref: "#/components/parameters/UserID"
+      responses:
+        "200":
+          description: User details
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    patch:
+      tags: [Users]
+      summary: Patch user
+      description: >
+        Updates user fields (`name`, `password`, `roles`) with partial payload.
+        Requires `users:write` role (or wildcard `*`).
+
+        **Field ownership rules:**
+        - Owner (token subject equals path `id`) can update `name`, `password`, and `roles`.
+        - Non-owner can update only `roles`.
+        - Non-owner attempting to update `name` or `password` receives `403`.
+
+        **Roles rules:**
+        - Replaces the entire roles list when provided.
+        - Empty list is allowed.
+        - Roles must belong to the fixed allowlist:
+          `users:read`, `users:write`, `movies:read`, `movies-watch:write`, `movies:write`.
+
+        **Password rule:**
+        - Minimum 6 characters.
+      operationId: patchUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationIdHeader"
+        - $ref: "#/components/parameters/UserID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchUserRequest"
+      responses:
+        "200":
+          description: User updated
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatchUserResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/movies:
+    get:
+      tags: [Movies]
+      summary: Get recommended movies
+      description: >
+        Returns personalized movie recommendations for the authenticated user
+        using cursor-based pagination.
+        The user ID is extracted from the token claims — no path parameter required.
+        The algorithm is auto-selected based on the user's watch history
+        or can be overridden via the `algorithm` query parameter.
+        Title filtering is optional and applied as case-insensitive contains.
+        Access is allowed for `movies:read`, `movies:write`, or wildcard `*`.
+
+        **Auto-selection rules:**
+
+        | Watch count | Algorithm |
+        |-------------|-----------|
+        | < 5 | POPULAR |
+        | 5 – 19 | CONTENT_BASED |
+        | ≥ 20 | COLLABORATIVE |
+      operationId: getRecommendedMovies
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationIdHeader"
+        - name: limit
+          in: query
+          description: Number of recommended movies to return per page (default 10, max 50).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+        - name: cursor
+          in: query
+          description: Opaque cursor token for pagination. Obtain from `nextCursor` or `prevCursor` in the previous response.
+          schema:
+            type: string
+        - name: algorithm
+          in: query
+          description: Override the auto-selected recommendation algorithm.
+          schema:
+            $ref: "#/components/schemas/RecommendationAlgorithm"
+        - name: title
+          in: query
+          description: Case-insensitive partial title filter applied together with algorithm results.
+          schema:
+            type: string
+            example: matrix
+      responses:
+        "200":
+          description: Paginated list of recommended movies
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationsPageResponse"
+        "400":
+          description: Invalid limit or cursor parameter, or unknown algorithm
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: invalid cursor
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/movies/{id}:
+    get:
+      tags: [Movies]
+      summary: Get movie details
+      description: >
+        Returns the full details of a movie, including genres, actors, directors and plot.
+        Requires `movies:read` role.
+      operationId: getMovie
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationIdHeader"
+        - $ref: "#/components/parameters/MovieID"
+      responses:
+        "200":
+          description: Full movie details
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Movie"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/movies/{id}/watched:
+    post:
+      tags: [Movies]
+      summary: Record watched movie
+      description: Records that the authenticated user watched a movie, with a rating and reaction. Requires `movies-watch:write` role.
+      operationId: recordWatched
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationIdHeader"
+        - $ref: "#/components/parameters/MovieID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordWatchedRequest"
+      responses:
+        "200":
+          description: Watch recorded
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchedResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/movies-import:
+    post:
+      tags: [Import]
+      summary: Trigger movie import
+      description: >
+        Triggers an async import of movies from OMDB for each search term.
+        For each term, up to `maxPages` pages (10 results/page) are fetched
+        and each movie is enqueued in SQS for processing.
+        Requires `movies:write` role.
+      operationId: triggerImport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CorrelationIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TriggerImportRequest"
+      responses:
+        "202":
+          description: Import triggered
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationIdHeader"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: import triggered
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    CorrelationIdHeader:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      description: Optional correlation ID for distributed tracing. If omitted, the API generates one.
+      schema:
+        type: string
+        example: 6d7a1a61-6fd8-4af2-9524-98d77c0a3c34
+
+    UserID:
+      name: id
+      in: path
+      required: true
+      description: User UUID
+      schema:
+        type: string
+        format: uuid
+        example: 90b4fd08-ee46-4d54-a7c0-1bab4857cec3
+
+    MovieID:
+      name: id
+      in: path
+      required: true
+      description: Movie UUID
+      schema:
+        type: string
+        format: uuid
+        example: 4e5ebac2-d48d-4fc6-9319-dd52cf3be8b6
+
+  responses:
+    BadRequest:
+      description: Bad request
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationIdHeader"
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: invalid request body
+
+    Unauthorized:
+      description: Missing or invalid JWT token
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationIdHeader"
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: unauthorized
+
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationIdHeader"
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: forbidden
+
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationIdHeader"
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: not found
+
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationIdHeader"
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: internal server error
+
+  headers:
+    CorrelationIdHeader:
+      description: Correlation ID used for end-to-end request tracing.
+      schema:
+        type: string
+        example: 6d7a1a61-6fd8-4af2-9524-98d77c0a3c34
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-05-30T12:00:00Z"
+        services:
+          type: object
+          properties:
+            neo4j:
+              type: string
+              enum: [ok, unavailable]
+              example: ok
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: william_cesar_santos@hotmail.com
+        password:
+          type: string
+          format: password
+          example: "123456"
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Signed JWT token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        email:
+          type: string
+          format: email
+          example: william_cesar_santos@hotmail.com
+        roles:
+          type: array
+          items:
+            type: string
+          example: ["*"]
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2026-05-31T12:00:00Z"
+
+    CreateUserRequest:
+      type: object
+      required: [name, email, password, roles]
+      properties:
+        name:
+          type: string
+          example: Alice
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        password:
+          type: string
+          format: password
+          example: s3cr3t
+        roles:
+          type: array
+          items:
+            type: string
+          example: ["users:read", "users:write", "movies:read", "movies-watch:write"]
+
+    CreateUserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 90b4fd08-ee46-4d54-a7c0-1bab4857cec3
+        name:
+          type: string
+          example: Alice
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        roles:
+          type: array
+          items:
+            type: string
+          example: ["users:read", "movies:read"]
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-30T12:00:00Z"
+
+    PatchUserRequest:
+      type: object
+      description: Partial user update payload. At least one field must be provided.
+      properties:
+        name:
+          type: string
+          example: Alice Updated
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: "123456"
+        roles:
+          type: array
+          items:
+            type: string
+            enum:
+              - users:read
+              - users:write
+              - movies:read
+              - movies-watch:write
+              - movies:write
+          example: ["users:read", "movies:read"]
+
+    PatchUserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 90b4fd08-ee46-4d54-a7c0-1bab4857cec3
+        name:
+          type: string
+          example: Alice Updated
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        roles:
+          type: array
+          items:
+            type: string
+          example: ["users:read", "movies:read"]
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-30T12:00:00Z"
+
+    User:
+      type: object
+      properties:
+        ID:
+          type: string
+          format: uuid
+          example: 90b4fd08-ee46-4d54-a7c0-1bab4857cec3
+        Name:
+          type: string
+          example: William
+        Email:
+          type: string
+          format: email
+          example: william_cesar_santos@hotmail.com
+        CreatedAt:
+          type: string
+          format: date-time
+          example: "2026-05-30T12:00:00Z"
+        CurrentAlgorithm:
+          $ref: "#/components/schemas/RecommendationAlgorithm"
+        WatchCount:
+          type: integer
+          example: 12
+        LikeCount:
+          type: integer
+          example: 8
+        DislikeCount:
+          type: integer
+          example: 2
+
+    Genre:
+      type: object
+      properties:
+        Name:
+          type: string
+          example: Action
+
+    Actor:
+      type: object
+      properties:
+        Name:
+          type: string
+          example: Keanu Reeves
+
+    Director:
+      type: object
+      properties:
+        Name:
+          type: string
+          example: Lana Wachowski
+
+    Movie:
+      type: object
+      properties:
+        ID:
+          type: string
+          format: uuid
+          example: 4e5ebac2-d48d-4fc6-9319-dd52cf3be8b6
+        Title:
+          type: string
+          example: The Matrix
+        Year:
+          type: string
+          example: "1999"
+        Plot:
+          type: string
+          example: A computer hacker learns from mysterious rebels about the true nature of his reality.
+        Runtime:
+          type: string
+          example: 136 min
+        Poster:
+          type: string
+          format: uri
+          example: https://m.media-amazon.com/images/M/...
+        ImdbRating:
+          type: number
+          format: float
+          example: 8.7
+        ImdbID:
+          type: string
+          example: tt0133093
+        Genres:
+          type: array
+          items:
+            $ref: "#/components/schemas/Genre"
+        Actors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Actor"
+        Directors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Director"
+
+    MovieSummary:
+      type: object
+      description: Reduced movie representation returned in list endpoints.
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 4e5ebac2-d48d-4fc6-9319-dd52cf3be8b6
+        title:
+          type: string
+          example: The Matrix
+        year:
+          type: string
+          example: "1999"
+        poster:
+          type: string
+          format: uri
+          example: https://m.media-amazon.com/images/M/...
+        imdbRating:
+          type: number
+          format: float
+          example: 8.7
+
+    RecordWatchedRequest:
+      type: object
+      required: [rating, reaction]
+      properties:
+        rating:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 10
+          example: 8.5
+        reaction:
+          type: string
+          enum: [liked, disliked, neutral]
+          example: liked
+
+    WatchedResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          example: 90b4fd08-ee46-4d54-a7c0-1bab4857cec3
+        movieId:
+          type: string
+          format: uuid
+          example: 4e5ebac2-d48d-4fc6-9319-dd52cf3be8b6
+        rating:
+          type: number
+          format: float
+          example: 8.5
+        reaction:
+          type: string
+          example: liked
+        watchedAt:
+          type: string
+          format: date-time
+          example: "2026-05-30T14:30:00Z"
+
+    TriggerImportRequest:
+      type: object
+      required: [searchTerms]
+      properties:
+        searchTerms:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          example: ["inception", "matrix", "interstellar"]
+        maxPages:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Number of OMDB result pages to fetch per search term (10 movies/page).
+          example: 3
+
+    ListUsersItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 90b4fd08-ee46-4d54-a7c0-1bab4857cec3
+        name:
+          type: string
+          example: Alice
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        roles:
+          type: array
+          items:
+            type: string
+          example: ["users:read", "movies:read"]
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-30T12:00:00Z"
+
+    ListUsersResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ListUsersItem"
+        total:
+          type: integer
+          description: Total number of matching users.
+          example: 42
+        page:
+          type: integer
+          description: Current page number (1-based).
+          example: 1
+        pageSize:
+          type: integer
+          description: Number of items per page.
+          example: 20
+
+    RecommendationsPageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieSummary"
+        nextCursor:
+          type: string
+          nullable: true
+          description: Opaque cursor to retrieve the next page. Null when there is no next page.
+          example: eyJvZmZzZXQiOjEwLCJ0b3RhbCI6NDB9...
+        prevCursor:
+          type: string
+          nullable: true
+          description: Opaque cursor to retrieve the previous page. Null when there is no previous page.
+          example: eyJvZmZzZXQiOjAsInRvdGFsIjo0MH0=...
+        hasNext:
+          type: boolean
+          description: Whether there is a next page.
+          example: true
+        hasPrev:
+          type: boolean
+          description: Whether there is a previous page.
+          example: false
+        limit:
+          type: integer
+          description: Page size used in this request.
+          example: 10
+        count:
+          type: integer
+          description: Number of items in this page.
+          example: 10
+        total:
+          type: integer
+          description: Total number of matching recommended movies.
+          example: 40
+    RecommendationAlgorithm:
+      type: string
+      enum:
+        - POPULAR
+        - CONTENT_BASED
+        - COLLABORATIVE
+        - HYBRID
+        - SERENDIPITY
+      example: CONTENT_BASED

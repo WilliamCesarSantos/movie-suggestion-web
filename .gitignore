@@ -33,6 +33,14 @@ vite.config.ts.timestamp-*
 .DS_Store
 Thumbs.db
 
+# Claude Code local settings (per-developer, not versioned)
+.claude/settings.local.json
+
+# Cypress artifacts
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+
 # Editor/IDE
 .idea/
 .vscode/*
