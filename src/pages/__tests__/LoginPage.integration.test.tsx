@@ -90,11 +90,11 @@ describe("LoginPage integration", () => {
     });
 
     it("shows the 'Entrando...' label with aria-busy while the request is in flight", async () => {
-      let resolveRequest: (() => void) | null = null;
+      const gate: { release?: () => void } = {};
       server.use(
         http.post(`${API}/login`, async () => {
           await new Promise<void>((resolve) => {
-            resolveRequest = resolve;
+            gate.release = resolve;
           });
           return HttpResponse.json({
             token: "test-token",
@@ -123,7 +123,7 @@ describe("LoginPage integration", () => {
       expect(screen.getByLabelText("Email")).toHaveAttribute("readonly");
       expect(screen.getByLabelText("Senha")).toHaveAttribute("readonly");
 
-      resolveRequest?.();
+      gate.release?.();
       await screen.findByTestId("catalog-page");
     });
   });

@@ -2,10 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login as loginApi } from "@/api/auth";
 import { storage } from "@/lib/storage";
+import { queryClient } from "@/lib/queryClient";
 
 type AuthState = {
   isAuthenticated: boolean;
   roles: string[];
+  email: string | null;
 };
 
 function readAuthState(): AuthState {
@@ -13,6 +15,7 @@ function readAuthState(): AuthState {
   return {
     isAuthenticated: token !== null,
     roles: token !== null ? storage.getRoles() : [],
+    email: token !== null ? storage.getEmail() : null,
   };
 }
 
@@ -30,19 +33,22 @@ export function useAuth() {
     const res = await loginApi({ email, password });
     storage.setToken(res.token);
     storage.setRoles(res.roles ?? []);
-    setState({ isAuthenticated: true, roles: res.roles ?? [] });
+    storage.setEmail(res.email ?? email);
+    setState({ isAuthenticated: true, roles: res.roles ?? [], email: res.email ?? email });
     return res;
   }, []);
 
   const logout = useCallback(() => {
     storage.clearToken();
-    setState({ isAuthenticated: false, roles: [] });
+    queryClient.clear();
+    setState({ isAuthenticated: false, roles: [], email: null });
     navigate("/login", { replace: true });
   }, [navigate]);
 
   return {
     isAuthenticated: state.isAuthenticated,
     roles: state.roles,
+    email: state.email,
     login,
     logout,
   };

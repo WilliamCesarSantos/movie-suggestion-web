@@ -1,5 +1,6 @@
 const TOKEN_KEY = "movie_token";
 const ROLES_KEY = "movie_roles";
+const EMAIL_KEY = "movie_email";
 
 export const storage = {
   getToken(): string | null {
@@ -10,11 +11,34 @@ export const storage = {
     }
   },
   setToken(token: string): void {
-    localStorage.setItem(TOKEN_KEY, token);
+    try {
+      localStorage.setItem(TOKEN_KEY, token);
+    } catch {
+      // ignore quota / access errors
+    }
   },
   clearToken(): void {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(ROLES_KEY);
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(ROLES_KEY);
+      localStorage.removeItem(EMAIL_KEY);
+    } catch {
+      // ignore access errors
+    }
+  },
+  getEmail(): string | null {
+    try {
+      return localStorage.getItem(EMAIL_KEY);
+    } catch {
+      return null;
+    }
+  },
+  setEmail(email: string): void {
+    try {
+      localStorage.setItem(EMAIL_KEY, email);
+    } catch {
+      // ignore
+    }
   },
   getRoles(): string[] {
     try {

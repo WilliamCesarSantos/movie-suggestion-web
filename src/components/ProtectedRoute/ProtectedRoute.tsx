@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { hasRole } from "@/lib/roles";
 
@@ -29,12 +29,12 @@ export function ProtectedRoute({ children, requireAuth, requireRoles }: Protecte
           <p className="mt-3 text-sm text-neutral-300">
             Você não tem permissão para acessar esta página.
           </p>
-          <a
-            href="/catalog"
+          <Link
+            to="/catalog"
             className="mt-6 inline-flex items-center justify-center rounded-lg bg-[#e50914] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#c1070f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#17171d]"
           >
             Voltar ao catálogo
-          </a>
+          </Link>
         </section>
       </main>
     );
