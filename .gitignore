@@ -36,6 +36,9 @@ Thumbs.db
 # Claude Code local settings (per-developer, not versioned)
 .claude/settings.local.json
 
+# Orchestrator message log — audit trail only, not versioned
+.claude/messages/*.json
+
 # Cypress artifacts
 cypress/videos/
 cypress/screenshots/

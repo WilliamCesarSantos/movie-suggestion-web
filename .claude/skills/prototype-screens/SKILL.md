@@ -76,7 +76,13 @@ Salve em `docs/prototypes/<kebab-case>.md`. Exemplos:
 ```
 
 ## Regras
-- Sempre inclua wireframe desktop E mobile.
+- Sempre inclua wireframe desktop E mobile em **ASCII art** (blocos `+---+`, `|   |`), não apenas listas hierárquicas — o usuário precisa visualizar a disposição.
 - Nunca omita estados de loading/erro/vazio.
 - Liste explicitamente os campos consumidos da API — isso vira contrato com o react-developer.
 - Reuse componentes entre telas (ex: `MovieCard`, `Header`) — mencione isso no protótipo.
+
+## Entrega final (apresentação ao usuário)
+
+Após salvar o arquivo, **apresente o ASCII art diretamente na mensagem de resposta** — copie os blocos de wireframe (desktop + mobile + estados visuais relevantes) para a conversa. O usuário aprova pelo que vê na tela do terminal, não pelo que está no arquivo.
+
+Encerre pedindo aprovação explícita antes do pipeline continuar. Veja o fluxo "aprovação humana" em `.claude/agents/ux-designer.md`.
