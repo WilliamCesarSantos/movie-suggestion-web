@@ -29,9 +29,8 @@ Referência: `components.schemas.Role` no `openapi.yml`. Valores possíveis:
 | Item do menu | Roles que liberam |
 |---|---|
 | Catálogo (acesso à página) | `movies:read`, `movies:write`, `*` |
-| Usuários > Listar | `users:read`, `users:write`, `*` |
-| Usuários > Cadastrar | `users:write`, `*` |
-| Usuários > Editar (link abre a tela que escolhe o usuário) | `users:write`, `*` |
+| Usuários (entrada única, link para `/users`) | `users:read`, `users:write`, `*` |
+| Botão "Novo usuário" e ícone editar (dentro de `/users`; rotas `/users/new` e `/users/:id/edit`) | `users:write`, `*` |
 | Filme > Importar (OMDB) | `movies:write`, `*` |
 | Avaliar filme (ação do card → player) | `movies-watch:write`, `*` |
 
@@ -45,22 +44,20 @@ A lista do menu é construída declarativamente:
 ```
 const MENU = [
   { label: "Catálogo",             to: "/catalog",         required: ["movies:read", "movies:write"] },
-  { label: "Usuários > Listar",    to: "/users",           required: ["users:read", "users:write"]  },
-  { label: "Usuários > Cadastrar", to: "/users/new",       required: ["users:write"]                },
-  { label: "Usuários > Editar",    to: "/users",           required: ["users:write"]                },
+  { label: "Usuários",             to: "/users",           required: ["users:read", "users:write"]  },
   { label: "Filme > Importar",     to: "/movies/import",   required: ["movies:write"]               },
 ];
 ```
 O componente `Menu` filtra `MENU` com `hasRole(user.roles, item.required)` antes de renderizar. Wildcard `*` sempre passa.
 
-> **Exemplo de leitura literal**: *"Se `roles` inclui `'users:read'` ou `'*'`, mostrar `'Usuários > Listar'`. Se inclui `'users:write'` ou `'*'`, mostrar `'Usuários > Cadastrar'` e `'Usuários > Editar'`. Se inclui `'movies:write'` ou `'*'`, mostrar `'Filme > Importar'`."*
+> **Exemplo de leitura literal**: *"Se `roles` inclui `'users:read'`, `'users:write'` ou `'*'`, mostrar `'Usuários'` (item único; detalhes em `users.md`). Se inclui `'movies:write'` ou `'*'`, mostrar `'Filme > Importar'`."*
 
-> **Páginas secundárias (stubs nesta iteração)**: `/users`, `/users/new`, `/users/:id/edit` e `/movies/import` renderizam apenas um placeholder "Em breve". O foco desta iteração é o menu condicional, não o conteúdo.
+> **Páginas secundárias**: `/users`, `/users/new` e `/users/:id/edit` são especificadas em `docs/prototypes/users.md`. `/movies/import` segue como stub "Em breve".
 
 ## Wireframe (desktop ≥ 1024px)
 ```
 +----------------------------------------------------------------------------------+
-| MOVIE SUGGEST   [ Catálogo | Usuários v | Filme v ]        Olá, William  [Sair]  |
+| MOVIE SUGGEST   [ Catálogo | Usuários | Filme v ]         Olá, William  [Sair]  |
 +----------------------------------------------------------------------------------+
 |                                                                                  |
 |  Recomendados para você                                                          |
@@ -160,9 +157,6 @@ Em mobile, `[☰]` abre um **drawer** lateral (slide-in da esquerda, `w-72`) com
 |  Catálogo                     |
 |  ─────────────                |
 |  Usuários                     |
-|    · Listar                   |
-|    · Cadastrar                |
-|    · Editar                   |
 |  ─────────────                |
 |  Filme                        |
 |    · Importar                 |

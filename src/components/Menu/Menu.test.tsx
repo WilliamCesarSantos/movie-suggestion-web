@@ -25,29 +25,20 @@ describe("Menu role matrix", () => {
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
   });
 
-  it("wildcard shows every item", async () => {
+  it("wildcard shows Usuários and Importar", async () => {
     renderMenu(["*"]);
     await open();
-    for (const name of ["Listar", "Cadastrar", "Editar", "Importar"]) {
-      expect(screen.getByRole("link", { name })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Usuários" })).toHaveAttribute("href", "/users");
+    expect(screen.getByRole("link", { name: "Importar" })).toBeInTheDocument();
+    for (const name of ["Listar", "Cadastrar", "Editar"]) {
+      expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
     }
   });
 
-  it("users:read shows only Listar", async () => {
-    renderMenu(["users:read"]);
+  it.each([["users:read"], ["users:write"]])("%s shows only Usuários", async (role) => {
+    renderMenu([role]);
     await open();
-    expect(screen.getByRole("link", { name: "Listar" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Cadastrar" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Editar" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Importar" })).not.toBeInTheDocument();
-  });
-
-  it("users:write shows Listar, Cadastrar and Editar but not Importar", async () => {
-    renderMenu(["users:write"]);
-    await open();
-    expect(screen.getByRole("link", { name: "Listar" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Cadastrar" })).toHaveAttribute("href", "/users/new");
-    expect(screen.getByRole("link", { name: "Editar" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Usuários" })).toHaveAttribute("href", "/users");
     expect(screen.queryByRole("link", { name: "Importar" })).not.toBeInTheDocument();
   });
 
@@ -55,7 +46,7 @@ describe("Menu role matrix", () => {
     renderMenu(["movies:write"]);
     await open();
     expect(screen.getByRole("link", { name: "Importar" })).toHaveAttribute("href", "/movies-import");
-    expect(screen.queryByRole("link", { name: "Listar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Usuários" })).not.toBeInTheDocument();
   });
 
   it("toggles aria-expanded and closes on Escape returning focus to the button", async () => {
@@ -75,6 +66,6 @@ describe("Menu role matrix", () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Menu" }));
     await user.click(document.body);
-    expect(screen.queryByRole("link", { name: "Listar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Usuários" })).not.toBeInTheDocument();
   });
 });

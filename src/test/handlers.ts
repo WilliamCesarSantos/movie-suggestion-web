@@ -2,6 +2,22 @@ import { http, HttpResponse } from "msw";
 
 const API = "http://localhost:8080/api/v1";
 
+export type MockUser = { id: string; name: string; email: string; roles: string[]; createdAt: string };
+
+/** 45 deterministic users: "User 01" ... "User 45" (3 pages of 20). Built fresh per call, no shared state. */
+export function buildUsers(count = 45): MockUser[] {
+  return Array.from({ length: count }, (_, i) => {
+    const n = String(i + 1).padStart(2, "0");
+    return {
+      id: `u${n}`,
+      name: `User ${n}`,
+      email: `user${n}@example.com`,
+      roles: ["movies:read"],
+      createdAt: "2026-05-30T12:00:00Z",
+    };
+  });
+}
+
 export const handlers = [
   http.post(`${API}/login`, async () => {
     return HttpResponse.json({
@@ -43,5 +59,39 @@ export const handlers = [
       count: 2,
       total: 4,
     });
+  }),
+
+  http.get(`${API}/users`, ({ request }) => {
+    const url = new URL(request.url);
+    const name = (url.searchParams.get("name") ?? "").toLowerCase();
+    const email = (url.searchParams.get("email") ?? "").toLowerCase();
+    const page = Number(url.searchParams.get("page") ?? 1);
+    const pageSize = Number(url.searchParams.get("pageSize") ?? 20);
+    const all = buildUsers().filter(
+      (u) => u.name.toLowerCase().includes(name) && u.email.toLowerCase().includes(email)
+    );
+    const start = (page - 1) * pageSize;
+    return HttpResponse.json({ data: all.slice(start, start + pageSize), total: all.length, page, pageSize });
+  }),
+
+  http.post(`${API}/users`, async ({ request }) => {
+    const body = (await request.json()) as { name: string; email: string; roles: string[] };
+    return HttpResponse.json(
+      { id: "new-id", name: body.name, email: body.email, roles: body.roles, createdAt: "2026-11-13T10:00:00Z" },
+      { status: 201 }
+    );
+  }),
+
+  http.get(`${API}/users/:id`, ({ params }) => {
+    const u = buildUsers().find((x) => x.id === params.id);
+    if (!u) return HttpResponse.json({ message: "not found" }, { status: 404 });
+    return HttpResponse.json({ ID: u.id, Name: u.name, Email: u.email, CreatedAt: u.createdAt });
+  }),
+
+  http.patch(`${API}/users/:id`, async ({ params, request }) => {
+    const u = buildUsers().find((x) => x.id === params.id);
+    if (!u) return HttpResponse.json({ message: "not found" }, { status: 404 });
+    const body = (await request.json()) as { name?: string; roles?: string[] };
+    return HttpResponse.json({ ...u, name: body.name ?? u.name, roles: body.roles ?? u.roles });
   }),
 ];

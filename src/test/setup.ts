@@ -39,6 +39,24 @@ function installLocalStorageShim() {
 
 installLocalStorageShim();
 
+// jsdom has no IntersectionObserver; pages with infinite scroll (CatalogPage) need one.
+// Tests that need to trigger intersections stub their own via vi.stubGlobal.
+if (typeof globalThis.IntersectionObserver === "undefined") {
+  class NoopIntersectionObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  }
+  Object.defineProperty(globalThis, "IntersectionObserver", {
+    configurable: true,
+    writable: true,
+    value: NoopIntersectionObserver,
+  });
+}
+
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => {
   server.resetHandlers();

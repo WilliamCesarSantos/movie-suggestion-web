@@ -69,3 +69,58 @@ export type RecordWatchedRequest = {
 export type WatchedResponse = {
   status: string;
 };
+
+export type UserRole =
+  | "users:read"
+  | "users:write"
+  | "movies:read"
+  | "movies-watch:write"
+  | "movies:write";
+
+export type CreateUserRequest = {
+  name: string;
+  email: string;
+  password: string;
+  roles: string[];
+};
+
+export type UserResponse = {
+  id: string;
+  name: string;
+  email: string;
+  roles: string[];
+  createdAt: string;
+};
+
+export type CreateUserResponse = UserResponse;
+export type PatchUserResponse = UserResponse;
+export type ListUsersItem = UserResponse;
+
+export type PatchUserRequest = {
+  name?: string;
+  password?: string;
+  /** Replaces the whole list; may include non-assignable roles such as "*" that must be preserved. */
+  roles?: string[];
+};
+
+/** GET /users/{id} returns capitalized keys and no roles. */
+export type User = {
+  ID: string;
+  Name: string;
+  Email: string;
+  CreatedAt: string;
+};
+
+export type ListUsersResponse = {
+  data: ListUsersItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export type ListUsersParams = {
+  name?: string;
+  email?: string;
+  page?: number;
+  pageSize?: number;
+};

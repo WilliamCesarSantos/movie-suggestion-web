@@ -7,7 +7,6 @@ const linkClass = "block rounded px-3 py-2 text-sm text-white hover:bg-white/10"
 export function Menu() {
   const [open, setOpen] = useState(false);
   const canList = useHasRole(["users:read", "users:write"]);
-  const canEdit = useHasRole(["users:write"]);
   const canImport = useHasRole(["movies:write"]);
 
   const navRef = useRef<HTMLElement | null>(null);
@@ -36,7 +35,7 @@ export function Menu() {
     };
   }, [open]);
 
-  if (!canList && !canEdit && !canImport) {
+  if (!canList && !canImport) {
     return null;
   }
 
@@ -60,32 +59,11 @@ export function Menu() {
           id="main-menu"
           className="fixed inset-x-0 top-[57px] z-40 max-h-[80vh] overflow-y-auto border-b border-white/10 bg-surface p-3 shadow-xl sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:mt-2 sm:w-56 sm:rounded-lg sm:border"
         >
-          {(canList || canEdit) && (
+          {canList && (
             <li>
-              <p className="px-3 pt-2 text-xs font-semibold uppercase text-neutral-400">Usuários</p>
-              <ul>
-                {canList && (
-                  <li>
-                    <Link to="/users" className={linkClass} onClick={close}>
-                      Listar
-                    </Link>
-                  </li>
-                )}
-                {canEdit && (
-                  <li>
-                    <Link to="/users/new" className={linkClass} onClick={close}>
-                      Cadastrar
-                    </Link>
-                  </li>
-                )}
-                {canEdit && (
-                  <li>
-                    <Link to="/users?mode=edit" className={linkClass} onClick={close}>
-                      Editar
-                    </Link>
-                  </li>
-                )}
-              </ul>
+              <Link to="/users" className={linkClass} onClick={close}>
+                Usuários
+              </Link>
             </li>
           )}
           {canImport && (

@@ -139,7 +139,8 @@ describe("Catalog (E2E)", () => {
       },
     });
     cy.findByRole("button", { name: "Menu" }).click();
-    cy.findByRole("link", { name: "Listar" }).should("be.visible");
+    cy.findByRole("link", { name: "Usuários" }).should("be.visible");
+    cy.findByRole("link", { name: "Listar" }).should("not.exist");
     cy.findByRole("link", { name: "Cadastrar" }).should("not.exist");
     cy.findByRole("link", { name: "Importar" }).should("not.exist");
   });
