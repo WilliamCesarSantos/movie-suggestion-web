@@ -21,6 +21,7 @@ lerna-debug.log*
 .env
 .env.*
 !.env.example
+!.env.development
 *.local
 
 # TypeScript cache
