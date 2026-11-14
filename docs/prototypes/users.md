@@ -350,7 +350,7 @@ Wireframes principais acima. Botão "< Anterior" desabilitado na página 1; "Pr�
 - `< 640px`: lista em cards, filtros empilhados, botão `[+ Novo]` compacto no topo direito, formulário em largura total, botões empilhados.
 - `640-1024px`: tabela com colunas Nome, E-mail, Roles, Ações (esconder "Criado em"); menu em drawer.
 - `> 1024px`: tabela completa, menu inline.
-- Menu mobile (drawer) passa a ter item simples:
+- Menu mobile (drawer) com grupo "Filme" e item "Importar":
 ```
 +------------------+------------+
 |  MOVIE SUGGEST   |     [x]    |
@@ -358,8 +358,8 @@ Wireframes principais acima. Botão "< Anterior" desabilitado na página 1; "Pr�
 |  Catálogo                     |
 |  Usuários                     |
 |  ─────────────                |
-|  Filme                        |
-|    · Importar                 |
+|  FILME                        |
+|    Importar                   |
 +------------------------------+
 |  Sair                         |
 +------------------------------+

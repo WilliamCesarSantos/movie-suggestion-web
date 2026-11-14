@@ -31,7 +31,7 @@ Referência: `components.schemas.Role` no `openapi.yml`. Valores possíveis:
 | Catálogo (acesso à página) | `movies:read`, `movies:write`, `*` |
 | Usuários (entrada única, link para `/users`) | `users:read`, `users:write`, `*` |
 | Botão "Novo usuário" e ícone editar (dentro de `/users`; rotas `/users/new` e `/users/:id/edit`) | `users:write`, `*` |
-| Filme > Importar (OMDB) | `movies:write`, `*` |
+| Filme > Importar (grupo "Filme", item link para `/movies-import`) | `movies:write`, `*` |
 | Avaliar filme (ação do card → player) | `movies-watch:write`, `*` |
 
 Função utilitária esperada (a ser implementada em `src/lib/roles.ts`):
@@ -45,19 +45,21 @@ A lista do menu é construída declarativamente:
 const MENU = [
   { label: "Catálogo",             to: "/catalog",         required: ["movies:read", "movies:write"] },
   { label: "Usuários",             to: "/users",           required: ["users:read", "users:write"]  },
-  { label: "Filme > Importar",     to: "/movies/import",   required: ["movies:write"]               },
+  { group: "Filme", items: [
+    { label: "Importar",           to: "/movies-import",   required: ["movies:write"]               },
+  ] },
 ];
 ```
 O componente `Menu` filtra `MENU` com `hasRole(user.roles, item.required)` antes de renderizar. Wildcard `*` sempre passa.
 
-> **Exemplo de leitura literal**: *"Se `roles` inclui `'users:read'`, `'users:write'` ou `'*'`, mostrar `'Usuários'` (item único; detalhes em `users.md`). Se inclui `'movies:write'` ou `'*'`, mostrar `'Filme > Importar'`."*
+> **Exemplo de leitura literal**: *"Se `roles` inclui `'users:read'`, `'users:write'` ou `'*'`, mostrar `'Usuários'` (item único; detalhes em `users.md`). Se inclui `'movies:write'` ou `'*'`, mostrar o grupo `'Filme'` com o item `'Importar'`."*
 
-> **Páginas secundárias**: `/users`, `/users/new` e `/users/:id/edit` são especificadas em `docs/prototypes/users.md`. `/movies/import` segue como stub "Em breve".
+> **Páginas secundárias**: `/users`, `/users/new` e `/users/:id/edit` são especificadas em `docs/prototypes/users.md`. `/movies-import` é especificada em `docs/prototypes/movies-import.md` (rota `/movies-import`, alinhada ao path da API `POST /api/v1/movies-import`; substitui `/movies/import`).
 
 ## Wireframe (desktop ≥ 1024px)
 ```
 +----------------------------------------------------------------------------------+
-| MOVIE SUGGEST   [ Catálogo | Usuários | Filme v ]         Olá, William  [Sair]  |
+| MOVIE SUGGEST [ Catálogo | Usuários | Filme v ]           Olá, William  [Sair]  |
 +----------------------------------------------------------------------------------+
 |                                                                                  |
 |  Recomendados para você                                                          |
@@ -90,7 +92,7 @@ O componente `Menu` filtra `MENU` com `hasRole(user.roles, item.required)` antes
 Detalhamento do **menu** em desktop:
 - O header ocupa a largura total, altura fixa `h-16`, `sticky top-0 z-20`, com `bg-[#17171d]/90 backdrop-blur`.
 - Ordem esquerda → direita: logo | separador | links principais (horizontal) | spacer | nome do usuário | botão "Sair".
-- Dropdowns ("Usuários v", "Filme v") são `<button>` com `aria-haspopup="menu"` + `aria-expanded`. Abrem um painel absoluto com os sub-itens que o usuário tem permissão. Se **nenhum** sub-item passar no filtro de role, o grupo inteiro (ex.: "Usuários v") **não é renderizado**.
+- Dropdowns (grupos com mais de um sub-item, se houver no futuro; hoje "Usuários" é link simples e "Filme" é o grupo com o item "Importar") são `<button>` com `aria-haspopup="menu"` + `aria-expanded`. Abrem um painel absoluto com os sub-itens que o usuário tem permissão. Se **nenhum** sub-item passar no filtro de role, o grupo inteiro (ex.: "Usuários v") **não é renderizado**.
 
 Detalhamento do **grid**:
 - Container `max-w-[1280px] mx-auto px-6`.
@@ -158,8 +160,8 @@ Em mobile, `[☰]` abre um **drawer** lateral (slide-in da esquerda, `w-72`) com
 |  ─────────────                |
 |  Usuários                     |
 |  ─────────────                |
-|  Filme                        |
-|    · Importar                 |
+|  FILME                        |
+|    Importar                   |
 +------------------------------+
 |  Sair                         |
 +------------------------------+
@@ -226,7 +228,7 @@ Em mobile, `[☰]` abre um **drawer** lateral (slide-in da esquerda, `w-72`) com
 +----------------------------------------------------------------------------------+
 ```
 - Mensagem centralizada, sem botão de retry (não é erro).
-- Se o usuário tiver `movies:write` ou `*`, exibir CTA secundário `[ Importar filmes ]` que leva a `/movies/import`.
+- Se o usuário tiver `movies:write` ou `*`, exibir CTA secundário `[ Importar filmes ]` que leva a `/movies-import`.
 
 ### 4. success (grid populado, `hasNext=true`)
 Wireframe idêntico ao principal (acima). Scroll até o final dispara `fetchNextPage()` via `IntersectionObserver` em uma `<div ref={sentinelRef} />` posicionada depois do último card.
@@ -278,7 +280,7 @@ Wireframe idêntico ao principal (acima). Scroll até o final dispara `fetchNext
 - **Scroll até 90% da altura visível do grid**: `IntersectionObserver` dispara `fetchNextPage()` enquanto `hasNext === true && !isFetchingNextPage`.
 - **Pull-to-refresh (mobile)**: não suportado nesta iteração (deixar como follow-up).
 - **Clique em "Sair"**: chama `useAuth().logout()`, limpa token (`storage.clearToken()`), redireciona para `/login` com `replace`.
-- **Clique em item de menu**: navega para a rota correspondente (`/users`, `/users/new`, `/movies/import`, etc.). Rotas protegidas verificam role de novo no mount (defesa em profundidade).
+- **Clique em item de menu**: navega para a rota correspondente (`/users`, `/users/new`, `/movies-import`, etc.). Rotas protegidas verificam role de novo no mount (defesa em profundidade).
 - **Drawer mobile**: clique no `[☰]` abre; clique no backdrop ou no `[x]` fecha; `Esc` também fecha; foco é movido para o primeiro item ao abrir.
 - **Dropdown desktop**: abre no clique (não hover) para funcionar em teclado/touch; `Esc` fecha; foco retorna ao botão de abertura.
 

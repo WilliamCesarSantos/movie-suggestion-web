@@ -6,7 +6,7 @@ import { MovieRatingPage } from "@/pages/MovieRatingPage";
 import { UsersListPage } from "@/pages/UsersListPage";
 import { UserCreatePage } from "@/pages/UserCreatePage";
 import { UserEditPage } from "@/pages/UserEditPage";
-import { MovieImportPage } from "@/pages/stubs/MovieImportPage";
+import { MoviesImportPage } from "@/pages/MoviesImportPage";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 function guard(element: ReactNode, requireRoles?: string[]) {
@@ -27,7 +27,7 @@ export function App() {
       <Route path="/users" element={guard(<UsersListPage />, ["users:read", "users:write"])} />
       <Route path="/users/new" element={guard(<UserCreatePage />, ["users:write"])} />
       <Route path="/users/:id/edit" element={guard(<UserEditPage />, ["users:write"])} />
-      <Route path="/movies-import" element={guard(<MovieImportPage />, ["movies:write"])} />
+      <Route path="/movies-import" element={guard(<MoviesImportPage />, ["movies:write"])} />
       <Route path="*" element={<Navigate to="/catalog" replace />} />
     </Routes>
   );

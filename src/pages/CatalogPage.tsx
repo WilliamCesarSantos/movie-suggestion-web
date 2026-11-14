@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { MovieSummary } from "@/api/types";
 import { Header } from "@/components/Header/Header";
 import { MovieCard } from "@/components/MovieCard/MovieCard";
@@ -9,6 +9,7 @@ import { useInfiniteMovies } from "@/hooks/useInfiniteMovies";
 
 export function CatalogPage() {
   const navigate = useNavigate();
+  const canImport = useHasRole(["movies:write"]);
   const canRate = useHasRole(["movies-watch:write"]);
   const [playing, setPlaying] = useState<MovieSummary | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -78,7 +79,19 @@ export function CatalogPage() {
           </div>
         )}
         {!isLoading && !isError && movies.length === 0 && (
-          <p className="py-10 text-center text-neutral-400">Nenhum filme encontrado.</p>
+          <div className="py-10 text-center text-neutral-400">
+            <p>Nenhum filme encontrado.</p>
+            {canImport ? (
+              <Link
+                to="/movies-import"
+                className="mt-4 inline-block rounded border border-neutral-600 px-4 py-2 text-sm text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              >
+                Importar filmes
+              </Link>
+            ) : (
+              <p className="mt-1 text-sm">Peça ao administrador para importar títulos no sistema.</p>
+            )}
+          </div>
         )}
         {movies.length > 0 && (
           <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">

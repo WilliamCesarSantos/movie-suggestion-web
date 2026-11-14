@@ -148,6 +148,29 @@ describe("Catalog integration", () => {
     expect(await screen.findByText("Nenhum filme encontrado.")).toBeInTheDocument();
   });
 
+  describe("empty state CTA", () => {
+    const emptyPage = {
+      data: [], nextCursor: null, prevCursor: null, hasNext: false, hasPrev: false, limit: 20, count: 0, total: 0,
+    };
+
+    it("shows the 'Importar filmes' link to /movies-import with movies:write", async () => {
+      seed(["movies:write"]);
+      server.use(http.get(`${API}/movies`, () => HttpResponse.json(emptyPage)));
+      renderApp();
+      await screen.findByText("Nenhum filme encontrado.");
+      expect(screen.getByRole("link", { name: "Importar filmes" })).toHaveAttribute("href", "/movies-import");
+    });
+
+    it("shows the hint instead of the link without movies:write", async () => {
+      seed(["movies:read"]);
+      server.use(http.get(`${API}/movies`, () => HttpResponse.json(emptyPage)));
+      renderApp();
+      await screen.findByText("Nenhum filme encontrado.");
+      expect(screen.queryByRole("link", { name: "Importar filmes" })).not.toBeInTheDocument();
+      expect(screen.getByText("Peça ao administrador para importar títulos no sistema.")).toBeInTheDocument();
+    });
+  });
+
   it("clears the token on 401", async () => {
     seed(["*"]);
     server.use(http.get(`${API}/movies`, () => HttpResponse.json({ message: "unauthorized" }, { status: 401 })));
@@ -220,7 +243,7 @@ describe("Catalog integration", () => {
     it("allows /movies-import with movies:write", async () => {
       seed(["movies:write"]);
       renderApp("/movies-import");
-      expect(await screen.findByText("Importar filmes")).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { name: "Importar filmes" })).toBeInTheDocument();
     });
 
     it("denies /movies/:id/rate without movies-watch:write", async () => {

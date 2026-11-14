@@ -124,3 +124,12 @@ export type ListUsersParams = {
   page?: number;
   pageSize?: number;
 };
+
+export type TriggerImportRequest = {
+  searchTerms: string[];
+  maxPages: number;
+};
+
+export type TriggerImportResponse = {
+  status: string;
+};
